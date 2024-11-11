@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: netfreelance_app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - netfreelance
+
+  database:
+    image: mysql:8.0
+    container_name: netfreelance_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: netfreelance
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: symfony
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - netfreelance
+
+networks:
+  netfreelance:
+    driver: bridge
+
+volumes:
+  db_data: 
