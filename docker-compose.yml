@@ -1,31 +1,41 @@
 version: '3.8'
 
 services:
-  app:
+  php:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: netfreelance_app
-    restart: unless-stopped
-    working_dir: /var/www/
+    container_name: netfreelance_php
     volumes:
-      - ./:/var/www
+      - .:/var/www
+    networks:
+      - netfreelance
+
+  nginx:
+    image: nginx:alpine
+    container_name: netfreelance_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
     networks:
       - netfreelance
 
   database:
     image: mysql:8.0
     container_name: netfreelance_db
-    restart: unless-stopped
     environment:
       MYSQL_DATABASE: netfreelance
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: root
       MYSQL_USER: symfony
-    volumes:
-      - db_data:/var/lib/mysql
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
     networks:
       - netfreelance
 
