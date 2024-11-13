@@ -1,0 +1,11 @@
+services:
+    Symfony\Component\Ldap\Ldap:
+        arguments: ['@Symfony\Component\Ldap\Adapter\ExtLdap\Adapter']
+    Symfony\Component\Ldap\Adapter\ExtLdap\Adapter:
+        arguments:
+            - host: '%env(LDAP_HOST)%'
+              port: '%env(LDAP_PORT)%'
+              encryption: none
+              options:
+                  protocol_version: 3
+                  referrals: false 
