@@ -19,8 +19,6 @@ security:
                 check_path: app_login
                 username_path: email
                 password_path: password
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
             jwt: ~
             logout:
                 path: app_logout

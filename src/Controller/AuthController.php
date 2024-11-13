@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 
 class AuthController extends AbstractController
 {
@@ -35,7 +36,7 @@ class AuthController extends AbstractController
         // Create new user
         $user = new User();
         $user->setEmail($data['email']);
-        $user->setRoles(['ROLE_USER']);
+        $user->setRoles($data['roles']);
 
         // Hash the password
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
@@ -49,10 +50,26 @@ class AuthController extends AbstractController
     }
 
     #[Route('/api/login', name: 'app_login', methods: ['POST'])]
-    public function login(): JsonResponse
+    public function login(Request $request, JWTTokenManagerInterface $JWTManager): JsonResponse
     {
-        // This route will be handled by the JSON login authenticator
-        throw new \Exception('This should never be reached!');
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return new JsonResponse(['message' => 'Invalid credentials'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Get user data
+        $roles = $user->getRoles();
+        $token = $JWTManager->create($user);
+        
+        // Create response data
+        $responseData = [
+                'token'=> $token,
+                'roles'=> $roles,
+                'email'=> $user->getEmail()   
+        ];
+
+        // Return response with explicit status code
+        return new JsonResponse($responseData, Response::HTTP_OK);
     }
 
     #[Route('/api/logout', name: 'app_logout', methods: ['POST'])]
