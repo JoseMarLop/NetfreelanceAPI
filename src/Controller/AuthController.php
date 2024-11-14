@@ -50,25 +50,50 @@ class AuthController extends AbstractController
     }
 
     #[Route('/api/login', name: 'app_login', methods: ['POST'])]
-    public function login(Request $request, JWTTokenManagerInterface $JWTManager): JsonResponse
+    public function login(
+        Request $request, 
+        JWTTokenManagerInterface $JWTManager,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher
+    ): JsonResponse
     {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return new JsonResponse(['message' => 'Invalid credentials'], Response::HTTP_UNAUTHORIZED);
+        $data = json_decode($request->getContent(), true);
+        
+        // Validate that email and password are provided
+        if (!isset($data['email']) || !isset($data['password'])) {
+            return new JsonResponse(
+                ['error' => 'Email and password are required'], 
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
-        // Get user data
-        $roles = $user->getRoles();
+        // Check if user exists
+        $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $data['email']]);
+        if (!$user) {
+            return new JsonResponse(
+                ['error' => 'Email not found'], 
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        // Verify password
+        if (!$passwordHasher->isPasswordValid($user, $data['password'])) {
+            return new JsonResponse(
+                ['error' => 'Invalid password'], 
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        // Get user data and create token
         $token = $JWTManager->create($user);
         
         // Create response data
         $responseData = [
-                'token'=> $token,
-                'roles'=> $roles,
-                'email'=> $user->getEmail()   
+            'token' => $token,
+            'roles' => $user->getRoles(),
+            'email' => $user->getEmail()   
         ];
 
-        // Return response with explicit status code
         return new JsonResponse($responseData, Response::HTTP_OK);
     }
 
