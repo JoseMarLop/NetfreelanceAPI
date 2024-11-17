@@ -11,9 +11,16 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+
 
 class AuthController extends AbstractController
 {
+    public function __construct(
+        private UserController $userController
+    ) {
+    }
+
     #[Route('/api/register', name: 'app_register', methods: ['POST'])]
     public function register(
         Request $request, 
@@ -23,7 +30,7 @@ class AuthController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         // Validate required fields
-        if (!isset($data['email']) || !isset($data['password'])) {
+        if (!isset($data['email']) || !isset($data['password']) || !isset($data['name'])) {
             return new JsonResponse(['message' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -37,6 +44,13 @@ class AuthController extends AbstractController
         $user = new User();
         $user->setEmail($data['email']);
         $user->setRoles($data['roles']);
+        $user->setName($data['name']);
+        $user->setPrice($data['price'] ?? null);
+        $user->setCompany($data['company'] ?? null);
+        $user->setCompanyName($data['companyName'] ?? null);
+        $user->setDescription($data['description'] ?? null);
+        $user->setAddress($data['address'] ?? null);
+        $user->setJob($data['job'] ?? null);
 
         // Hash the password
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
@@ -45,6 +59,13 @@ class AuthController extends AbstractController
         // Save user to database
         $entityManager->persist($user);
         $entityManager->flush();
+
+        // Handle profile picture if present
+        /** @var UploadedFile $profilePicture */
+        $profilePicture = $request->files->get('profile_picture');
+        if ($profilePicture) {
+            $this->userController->handleProfilePictureUpload($profilePicture, $user);
+        }
 
         return new JsonResponse(['message' => 'User registered successfully'], Response::HTTP_CREATED);
     }

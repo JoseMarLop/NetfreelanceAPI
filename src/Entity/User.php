@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -45,6 +47,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $rating = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $address = null;
+
+    /**
+     * @var Collection<int, UserLinks>
+     */
+    #[ORM\OneToMany(targetEntity: UserLinks::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $userLinks;
+
+    /**
+     * @var Collection<int, UserAbilities>
+     */
+    #[ORM\OneToMany(targetEntity: UserAbilities::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $userAbilities;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $job = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $profilepcic = null;
+
+    public function __construct()
+    {
+        $this->userLinks = new ArrayCollection();
+        $this->userAbilities = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -177,6 +209,114 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getRating(): ?float
+    {
+        return $this->rating;
+    }
+
+    public function setRating(?float $rating): static
+    {
+        $this->rating = $rating;
+
+        return $this;
+    }
+
+    public function getAddress(): ?string
+    {
+        return $this->address;
+    }
+
+    public function setAddress(?string $address): static
+    {
+        $this->address = $address;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserLinks>
+     */
+    public function getUserLinks(): Collection
+    {
+        return $this->userLinks;
+    }
+
+    public function addUserLink(UserLinks $userLink): static
+    {
+        if (!$this->userLinks->contains($userLink)) {
+            $this->userLinks->add($userLink);
+            $userLink->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserLink(UserLinks $userLink): static
+    {
+        if ($this->userLinks->removeElement($userLink)) {
+            // set the owning side to null (unless already changed)
+            if ($userLink->getUser() === $this) {
+                $userLink->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, UserAbilities>
+     */
+    public function getUserAbilities(): Collection
+    {
+        return $this->userAbilities;
+    }
+
+    public function addUserAbility(UserAbilities $userAbility): static
+    {
+        if (!$this->userAbilities->contains($userAbility)) {
+            $this->userAbilities->add($userAbility);
+            $userAbility->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUserAbility(UserAbilities $userAbility): static
+    {
+        if ($this->userAbilities->removeElement($userAbility)) {
+            // set the owning side to null (unless already changed)
+            if ($userAbility->getUser() === $this) {
+                $userAbility->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getJob(): ?string
+    {
+        return $this->job;
+    }
+
+    public function setJob(?string $job): static
+    {
+        $this->job = $job;
+
+        return $this;
+    }
+
+    public function getProfilepcic(): ?string
+    {
+        return $this->profilepcic;
+    }
+
+    public function setProfilepcic(?string $profilepcic): static
+    {
+        $this->profilepcic = $profilepcic;
 
         return $this;
     }
