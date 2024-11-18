@@ -72,10 +72,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $profilepcic = null;
 
+    /**
+     * @var Collection<int, Review>
+     */
+    #[ORM\OneToMany(targetEntity: Review::class, mappedBy: 'receiver', orphanRemoval: true)]
+    private Collection $reviews;
+
+    /**
+     * @var Collection<int, Review>
+     */
+    #[ORM\OneToMany(targetEntity: Review::class, mappedBy: 'sender', orphanRemoval: true)]
+    private Collection $reviewsWrote;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $phone = null;
+
     public function __construct()
     {
         $this->userLinks = new ArrayCollection();
         $this->userAbilities = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
+        $this->reviewsWrote = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -317,6 +334,78 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setProfilepcic(?string $profilepcic): static
     {
         $this->profilepcic = $profilepcic;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Review>
+     */
+    public function getReviews(): Collection
+    {
+        return $this->reviews;
+    }
+
+    public function addReview(Review $review): static
+    {
+        if (!$this->reviews->contains($review)) {
+            $this->reviews->add($review);
+            $review->setReceiver($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReview(Review $review): static
+    {
+        if ($this->reviews->removeElement($review)) {
+            // set the owning side to null (unless already changed)
+            if ($review->getReceiver() === $this) {
+                $review->setReceiver(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Review>
+     */
+    public function getReviewsWrote(): Collection
+    {
+        return $this->reviewsWrote;
+    }
+
+    public function addReviewsWrote(Review $reviewsWrote): static
+    {
+        if (!$this->reviewsWrote->contains($reviewsWrote)) {
+            $this->reviewsWrote->add($reviewsWrote);
+            $reviewsWrote->setSender($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReviewsWrote(Review $reviewsWrote): static
+    {
+        if ($this->reviewsWrote->removeElement($reviewsWrote)) {
+            // set the owning side to null (unless already changed)
+            if ($reviewsWrote->getSender() === $this) {
+                $reviewsWrote->setSender(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getPhone(): ?int
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?int $phone): static
+    {
+        $this->phone = $phone;
 
         return $this;
     }
