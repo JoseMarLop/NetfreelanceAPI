@@ -16,6 +16,12 @@ class ReviewRepository extends ServiceEntityRepository
         parent::__construct($registry, Review::class);
     }
 
+    public function save(Review $review): void
+    {
+        $this->_em->persist($review);
+        $this->_em->flush();
+    }
+
     //    /**
     //     * @return Review[] Returns an array of Review objects
     //     */

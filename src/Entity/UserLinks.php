@@ -23,6 +23,9 @@ class UserLinks
     #[ORM\JoinColumn(nullable: false)]
     private ?user $user = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $link = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,18 @@ class UserLinks
     public function setUser(?user $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getLink(): ?string
+    {
+        return $this->link;
+    }
+
+    public function setLink(string $link): static
+    {
+        $this->link = $link;
 
         return $this;
     }

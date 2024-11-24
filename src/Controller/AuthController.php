@@ -51,6 +51,7 @@ class AuthController extends AbstractController
         $user->setDescription($data['description'] ?? null);
         $user->setAddress($data['address'] ?? null);
         $user->setJob($data['job'] ?? null);
+        $user->setPhone($data['phone'] ?? null);
 
         // Hash the password
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);

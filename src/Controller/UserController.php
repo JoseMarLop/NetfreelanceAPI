@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\UserLinks;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -10,8 +11,10 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 use App\Entity\User;
+use App\Repository\ReviewRepository;
 
 class UserController extends AbstractController
 {
@@ -50,6 +53,15 @@ class UserController extends AbstractController
         if (!$user) {
             return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
+        $links = [];
+        foreach ($user->getUserLinks() as $link) {
+            $links[] = [
+                'text'=>$link->getText(),
+                'icon'=>$link->getIcon(),
+                'link'=>$link->getLink(),
+                'id'=>$link->getId()
+            ];
+        }
         $responseData = [
             'email' => $user->getEmail(),
             'name' => $user->getName(),
@@ -60,7 +72,8 @@ class UserController extends AbstractController
             'description' => $user->getDescription(),
             'address' => $user->getAddress(),
             'job' => $user->getJob(),
-            // Add any other fields you want to return
+            'phone' =>$user->getPhone(),
+            'links' => $links
         ];
         return new JsonResponse($responseData, Response::HTTP_OK);
     }
@@ -77,4 +90,129 @@ class UserController extends AbstractController
 
         return new Response('File uploaded successfully', Response::HTTP_OK);
     }
+
+    #[Route('/api/users/edit', name: 'apiUpdateUser', methods: ['POST'])]
+    public function apiUpdateUser(Request $request, EntityManagerInterface $entityManager): JsonResponse{
+        $data = json_decode($request->getContent(), true);
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if(isset($data['email'])){
+            $user->setEmail($data['email']);
+        }
+        if(isset($data['name'])){
+            $user->setName($data['name']);
+        }
+        if(isset($data['price'])){
+            $user->setPrice($data['price']);
+        }
+        if(isset($data['address'])){
+            $user->setAddress($data['address']);
+        }
+        if(isset($data['job'])){
+            $user->setJob($data['job']);
+        }
+        if(isset($data['description'])){
+            $user->setDescription($data['description']);
+        }
+        if(isset($data['phone'])){
+            $user->setPhone($data['phone']);
+        }
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return new JsonResponse(['succes' => "usuario actualizado"]);
+    }
+
+    #[Route('/api/users/editpass', name: 'apiUpdatePassUser', methods: ['POST'])]
+    public function apiUpdatePassUser(Request $request,UserPasswordHasherInterface $passwordHasher,EntityManagerInterface $entityManager
+    ): JsonResponse{
+        $data = json_decode($request->getContent(),true);
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!isset($data['currentPassword']) || !isset($data['password'])) {
+            return new JsonResponse(['error' => 'Current password and new password are required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (!$passwordHasher->isPasswordValid($user, $data['currentPassword'])) {
+            return new JsonResponse(
+                ['error' => 'The current password is invalid'], 
+                Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
+        $user->setPassword($hashedPassword);
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return new JsonResponse(
+            ['success' => 'Password change'], 
+            Response::HTTP_OK
+        );
+    }
+
+    #[Route('/api/users/links', name: 'apiUserLinks', methods: ['GET'])]
+    public function getUserLinks(): JsonResponse{
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+        $links = [];
+        foreach ($user->getUserLinks() as $link) {
+            $links[] = [
+                'text'=>$link->getText(),
+                'icon'=>$link->getIcon(),
+                'link'=>$link->getLink(),
+                'id'=>$link->getId()
+            ];
+        }
+       
+        return new JsonResponse($links, Response::HTTP_OK);
+    }
+
+    #[Route('/api/users/links/new', name: 'apiAddUserLinks', methods: ['POST'])]
+    public function addUserLinks(Request $request, EntityManagerInterface $entityManagerInterface): JsonResponse{
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if($data['text'] == null || $data['icon'] == null || $data['link'] == null){
+            return new JsonResponse(['error' => 'All fields are required'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $link = new UserLinks();
+
+        $link->setUser($user);
+        $link->setText($data['text']);
+        $link->setIcon($data['icon']);
+        $link->setLink($data['link']);
+        $user->addUserLink($link);
+        $entityManagerInterface->persist($link);
+        $entityManagerInterface->persist($user);
+        $entityManagerInterface->flush();
+        return new JsonResponse(
+            ['success' => 'Link added'], 
+            Response::HTTP_OK
+        );   
+    }
+
+
+
+
+
+
 }
