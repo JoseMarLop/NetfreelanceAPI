@@ -181,6 +181,24 @@ class UserController extends AbstractController
         return new JsonResponse($links, Response::HTTP_OK);
     }
 
+    #[Route('/api/users/skills', name: 'apiUserSkilss', methods: ['GET'])]
+    public function getUserSkills(): JsonResponse{
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+        $skills = [];
+        foreach ($user->getUserAbilities() as $skill) {
+            $skills[] = [
+                'text'=>$skill->getText(),
+                'id'=>$skill->getId()
+            ];
+        }
+       
+        return new JsonResponse($skills, Response::HTTP_OK);
+    }
+
     #[Route('/api/users/links/new', name: 'apiAddUserLinks', methods: ['POST'])]
     public function addUserLinks(Request $request, EntityManagerInterface $entityManagerInterface): JsonResponse{
         /** @var User $user */
