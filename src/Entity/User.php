@@ -87,12 +87,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?int $phone = null;
 
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\OneToMany(targetEntity: Project::class, mappedBy: 'client', orphanRemoval: true)]
+    private Collection $projects;
+
+    /**
+     * @var Collection<int, Postulation>
+     */
+    #[ORM\OneToMany(targetEntity: Postulation::class, mappedBy: 'freelancer', orphanRemoval: true)]
+    private Collection $postulations;
+
     public function __construct()
     {
         $this->userLinks = new ArrayCollection();
         $this->userAbilities = new ArrayCollection();
         $this->reviews = new ArrayCollection();
         $this->reviewsWrote = new ArrayCollection();
+        $this->projects = new ArrayCollection();
+        $this->postulations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -406,6 +420,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPhone(?int $phone): static
     {
         $this->phone = $phone;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProject(Project $project): static
+    {
+        if (!$this->projects->contains($project)) {
+            $this->projects->add($project);
+            $project->setClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProject(Project $project): static
+    {
+        if ($this->projects->removeElement($project)) {
+            // set the owning side to null (unless already changed)
+            if ($project->getClient() === $this) {
+                $project->setClient(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Postulation>
+     */
+    public function getPostulations(): Collection
+    {
+        return $this->postulations;
+    }
+
+    public function addPostulation(Postulation $postulation): static
+    {
+        if (!$this->postulations->contains($postulation)) {
+            $this->postulations->add($postulation);
+            $postulation->setFreelancer($this);
+        }
+
+        return $this;
+    }
+
+    public function removePostulation(Postulation $postulation): static
+    {
+        if ($this->postulations->removeElement($postulation)) {
+            // set the owning side to null (unless already changed)
+            if ($postulation->getFreelancer() === $this) {
+                $postulation->setFreelancer(null);
+            }
+        }
 
         return $this;
     }

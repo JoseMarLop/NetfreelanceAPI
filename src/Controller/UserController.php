@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 use App\Entity\User;
-use App\Repository\ReviewRepository;
+use Symfony\Component\Validator\Constraints\Json;
 
 class UserController extends AbstractController
 {
@@ -227,6 +227,34 @@ class UserController extends AbstractController
             Response::HTTP_OK
         );   
     }
+
+    #[Route('/api/users/projects', name: 'apiGetUserProjects', methods: ['GET'])]
+    public function getUserProjects(): JsonResponse {
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $projects = $user->getProjects();
+        $data = [];
+        foreach ($projects as $project) {
+            $data[] = [
+                'id' => $project->getId(),
+                'title' => $project->getTitle(), 
+                'description' => $project->getDescription(), 
+                'budget' => $project->getBudget(), 
+                'date' => $project->getProjectdate(), 
+                'client' => $project->getClient()->getName(),
+                'state' =>$project->isState(),
+                'category' =>$project->getCategory(),
+                'duration' => $project->getDuration()
+            ];
+        }
+
+        return new JsonResponse($data, Response::HTTP_OK);
+    }
+
 
 
 
