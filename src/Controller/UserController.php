@@ -244,7 +244,7 @@ class UserController extends AbstractController
                 'title' => $project->getTitle(), 
                 'description' => $project->getDescription(), 
                 'budget' => $project->getBudget(), 
-                'date' => $project->getProjectdate(), 
+                'projectdate' => $project->getProjectdate(), 
                 'client' => $project->getClient()->getName(),
                 'state' =>$project->isState(),
                 'category' =>$project->getCategory(),

@@ -19,8 +19,8 @@ class ProjectController extends AbstractController
     #[Route('/api/projects', name: 'apiGetProjects', methods: ['GET'])]
     public function getAllProjects(): JsonResponse
     {
-        
-        $projects = $this->projectsRepository->findAll();
+
+        $projects = $this->projectsRepository->findBy(['state' => true]);
 
         if (empty($projects)) {
             return new JsonResponse(['message' => 'No se encontraron proyectos.'], Response::HTTP_NOT_FOUND);
@@ -34,17 +34,51 @@ class ProjectController extends AbstractController
                 'description' => $project->getDescription(),
                 'projectdate' => $project->getProjectdate(),
                 'budget' => $project->getBudget(),
-                'clientid' => $project->getClient()->getId(),
-                'category' =>$project->getCategory(),
-                'duration' => $project->getDuration()
+                'client' => $project->getClient()->getName(),
+                'category' => $project->getCategory(),
+                'duration' => $project->getDuration(),
+                'state' => $project->isState()
             ];
         }
 
         return new JsonResponse($data, Response::HTTP_OK);
     }
 
+    #[Route('/api/projects/{id}', name: 'apiGetProject', methods: ['GET'])]
+    public function getProject(int $id): JsonResponse
+    {
+        $project = $this->projectsRepository->find($id);
+
+        if (!$project) {
+            return new JsonResponse(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = [
+            'id' => $project->getId(),
+            'title' => $project->getTitle(),
+            'description' => $project->getDescription(),
+            'projectdate' => $project->getProjectdate(),
+            'budget' => $project->getBudget(),
+            'category' => $project->getCategory(),
+            'duration' => $project->getDuration(),
+            'state' => $project->isState(),
+            'client' => [
+                'id' => $project->getClient()->getId(),
+                'name' => $project->getClient()->getName(),
+                'email' => $project->getClient()->getEmail(),
+                'phone' => $project->getClient()->getPhone(),
+                'address' => $project->getClient()->getAddress()
+            ]
+        ];
+
+        return new JsonResponse($data, Response::HTTP_OK);
+    }
+
+
+
     #[Route('/api/projects/new', name: 'apiAddProject', methods: ['POST'])]
-    public function addProject(Request $request, EntityManagerInterface $entityManager): JsonResponse{
+    public function addProject(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
         /** @var User $user */
         $user = $this->getUser();
         if (!$user) {
@@ -52,7 +86,7 @@ class ProjectController extends AbstractController
         }
         $data = json_decode($request->getContent(), true);
 
-        if($data['title'] == null || $data['description'] == null || $data['budget'] == null || $data['category'] == null){
+        if ($data['title'] == null || $data['description'] == null || $data['budget'] == null || $data['category'] == null) {
             return new JsonResponse(['error' => 'All fields are required'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -70,7 +104,7 @@ class ProjectController extends AbstractController
 
         $project->setState(true);
         $entityManager->persist($project);
-        $entityManager->flush();   
+        $entityManager->flush();
 
         return new JsonResponse(['message' => "Project Created"]);
     }
@@ -91,7 +125,7 @@ class ProjectController extends AbstractController
 
         // Remove project from user
         $user->removeProject($project);
-        
+
         // Remove project from database
         $entityManager->remove($project);
         $entityManager->flush();
@@ -100,27 +134,28 @@ class ProjectController extends AbstractController
     }
 
     #[Route('/api/projects/{id}', name: 'apiEditProject', methods: ['PUT'])]
-    public function editProject(Request $request, EntityManagerInterface $entityManager,int $id): JsonResponse{
+    public function editProject(Request $request, EntityManagerInterface $entityManager, int $id): JsonResponse
+    {
         $data = json_decode($request->getContent(), true);
         $project = $this->projectsRepository->find($id);
 
-        if(!$project){
+        if (!$project) {
             return new JsonResponse(['error' => 'Project not found'], Response::HTTP_NOT_FOUND);
         }
 
-        if(isset($data['title'])){
+        if (isset($data['title'])) {
             $project->setTitle($data['title']);
         }
-        if(isset($data['description'])){
+        if (isset($data['description'])) {
             $project->setDescription($data['description']);
         }
-        if(isset($data['budget'])){
+        if (isset($data['budget'])) {
             $project->setBudget($data['budget']);
         }
-        if(isset($data['category'])){
+        if (isset($data['category'])) {
             $project->setCategory($data['category']);
         }
-        if(isset($data['title'])){
+        if (isset($data['title'])) {
             $project->setState($data['state']);
         }
 
@@ -128,6 +163,4 @@ class ProjectController extends AbstractController
 
         return new JsonResponse(['message' => 'Project updated successfully'], Response::HTTP_OK);
     }
-
-
 }
